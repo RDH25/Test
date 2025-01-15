@@ -1,86 +1,169 @@
-import React, { useState, useCallback } from 'react';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숫자 맞추기 게임</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
 
-const NumberGuessingGame = () => {
-  // 게임 상태 관리
-  const [randomNumber] = useState(() => Math.floor(Math.random() * 100) + 1);
-  const [guess, setGuess] = useState('');
-  const [message, setMessage] = useState('1부터 100 사이의 숫자를 맞춰보세요!');
-  const [attempts, setAttempts] = useState(0);
-  const [bestScore, setBestScore] = useState(Infinity);
-  const [gameOver, setGameOver] = useState(false);
+        .game-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
 
-  // 숫자 추측 처리
-  const handleGuess = useCallback(() => {
-    const userGuess = parseInt(guess);
-    
-    if (isNaN(userGuess) || userGuess < 1 || userGuess > 100) {
-      setMessage('1부터 100 사이의 유효한 숫자를 입력해주세요!');
-      return;
-    }
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
 
-    setAttempts(prev => prev + 1);
+        .message {
+            margin-bottom: 1rem;
+            color: #666;
+        }
 
-    if (userGuess === randomNumber) {
-      setMessage(`축하합니다! ${attempts + 1}번 만에 맞추셨습니다!`);
-      setGameOver(true);
-      if (attempts + 1 < bestScore) {
-        setBestScore(attempts + 1);
-      }
-    } else if (userGuess < randomNumber) {
-      setMessage('더 높은 숫자입니다!');
-    } else {
-      setMessage('더 낮은 숫자입니다!');
-    }
-    
-    setGuess('');
-  }, [guess, randomNumber, attempts]);
+        .score {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 1rem;
+        }
 
-  // 게임 재시작
-  const handleRestart = useCallback(() => {
-    window.location.reload();
-  }, []);
+        .input-container {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-8 bg-white rounded-lg shadow-lg max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-6">숫자 맞추기 게임</h1>
-        
-        <div className="mb-6 text-center">
-          <p className="text-lg mb-2">{message}</p>
-          {bestScore !== Infinity && (
-            <p className="text-sm text-gray-600">최고 기록: {bestScore}회</p>
-          )}
-          <p className="text-sm text-gray-600">시도 횟수: {attempts}회</p>
+        input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>숫자 맞추기 게임</h1>
+        <p class="message" id="message">1부터 100 사이의 숫자를 맞춰보세요!</p>
+        <div class="score">
+            <p>시도 횟수: <span id="attempts">0</span>회</p>
+            <p id="bestScore" style="display: none;">최고 기록: <span id="bestScoreValue">-</span>회</p>
         </div>
-
-        <div className="flex gap-2 mb-4">
-          <input
-            type="number"
-            value={guess}
-            onChange={(e) => setGuess(e.target.value)}
-            className="flex-1 p-2 border rounded"
-            placeholder="숫자를 입력하세요"
-            disabled={gameOver}
-          />
-          {!gameOver ? (
-            <button
-              onClick={handleGuess}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              확인
-            </button>
-          ) : (
-            <button
-              onClick={handleRestart}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              다시하기
-            </button>
-          )}
+        <div class="input-container">
+            <input type="number" id="guessInput" min="1" max="100" placeholder="숫자를 입력하세요">
+            <button id="guessButton">확인</button>
         </div>
-      </div>
     </div>
-  );
-};
 
-export default NumberGuessingGame;
+    <script>
+        // 게임 상태 변수
+        const gameState = {
+            randomNumber: Math.floor(Math.random() * 100) + 1,
+            attempts: 0,
+            bestScore: Infinity,
+            gameOver: false
+        };
+
+        // DOM 요소
+        const messageElement = document.getElementById('message');
+        const attemptsElement = document.getElementById('attempts');
+        const bestScoreElement = document.getElementById('bestScore');
+        const bestScoreValueElement = document.getElementById('bestScoreValue');
+        const guessInput = document.getElementById('guessInput');
+        const guessButton = document.getElementById('guessButton');
+
+        // 게임 로직
+        function handleGuess() {
+            if (gameState.gameOver) {
+                resetGame();
+                return;
+            }
+
+            const guess = parseInt(guessInput.value);
+            
+            if (isNaN(guess) || guess < 1 || guess > 100) {
+                messageElement.textContent = '1부터 100 사이의 유효한 숫자를 입력해주세요!';
+                return;
+            }
+
+            gameState.attempts++;
+            attemptsElement.textContent = gameState.attempts;
+
+            if (guess === gameState.randomNumber) {
+                messageElement.textContent = `축하합니다! ${gameState.attempts}번 만에 맞추셨습니다!`;
+                gameState.gameOver = true;
+                guessButton.textContent = '다시하기';
+                
+                if (gameState.attempts < gameState.bestScore) {
+                    gameState.bestScore = gameState.attempts;
+                    bestScoreValueElement.textContent = gameState.bestScore;
+                    bestScoreElement.style.display = 'block';
+                }
+            } else if (guess < gameState.randomNumber) {
+                messageElement.textContent = '더 높은 숫자입니다!';
+            } else {
+                messageElement.textContent = '더 낮은 숫자입니다!';
+            }
+
+            guessInput.value = '';
+            guessInput.focus();
+        }
+
+        // 게임 초기화
+        function resetGame() {
+            gameState.randomNumber = Math.floor(Math.random() * 100) + 1;
+            gameState.attempts = 0;
+            gameState.gameOver = false;
+            
+            messageElement.textContent = '1부터 100 사이의 숫자를 맞춰보세요!';
+            attemptsElement.textContent = '0';
+            guessButton.textContent = '확인';
+            guessInput.value = '';
+            guessInput.disabled = false;
+        }
+
+        // 이벤트 리스너
+        guessButton.addEventListener('click', handleGuess);
+        guessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleGuess();
+            }
+        });
+    </script>
+</body>
+</html>
